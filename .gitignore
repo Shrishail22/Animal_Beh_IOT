@@ -1,0 +1,22 @@
+﻿# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Production builds
+dist/
+frontend/dist/
+dist-ssr/
+frontend/dist-ssr/
+
+# Environment variables
+.env.local
+.env.*.local
+frontend/.env.local
+frontend/.env.*.local
+
+# Editor & System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
