@@ -1,27 +1,6 @@
-// =============================================================================
-// Dashboard Service — Centralized API layer for Main Dashboard
-// =============================================================================
-// Provisional endpoint (confirm with backend developer):
-//   GET /dashboard/summary?species=XX&animalId=XX&timeframe=XX
-//
-// Returns:
-//   {
-//     totalAnimals: number,
-//     monitoredAnimals: number,
-//     normalBehavior: number,
-//     abnormalAlerts: number,
-//     devicesOnline: number,
-//     devicesOffline: number,
-//     devicesWarning: number,
-//     totalDevices: number,
-//     behaviorDistribution: [{ name: string, value: number, color: string }],
-//     sensorTrends: [{ time: string, avgTemperature: number, avgActivity: number, avgHeartRate: number }],
-//     recentAlerts: Alert[],
-//     recentReadings: SensorReading[]
-//   }
-// =============================================================================
 
 import api, { useMockData } from './api';
+
 import {
   mockDashboardSummary,
   mockBehaviorDistribution,
@@ -31,16 +10,76 @@ import {
   mockAnimals,
 } from '../mock/mockData';
 
+const normalizeDashboardResponse = (response) => {
+  const raw = response.data ?? response;
+  const summary = raw.summary ?? {};
+
+  const behaviorColors = {
+    NORMAL: '#22c55e',
+    LOW_ACTIVITY: '#eab308',
+    HIGH_ACTIVITY: '#f97316',
+    ABNORMAL: '#ef4444',
+  };
+
+  const behaviorDistribution = Object.entries(
+    raw.behavior_distribution ?? {}
+  ).map(([name, value]) => ({
+    name,
+    value,
+    color: behaviorColors[name] ?? '#94a3b8',
+  }));
+
+  const recentAlerts = (raw.recent_alerts ?? []).map((alert) => ({
+    ...alert,
+    animalName: alert.animal_name,
+    alertType: alert.alert_type,
+    timestamp: alert.created_at,
+  }));
+
+  const recentReadings = (raw.recent_readings ?? []).map((reading) => ({
+    ...reading,
+    animalName: reading.animal_name,
+    animalCode: reading.animal_code,
+    deviceCode: reading.device_code,
+    avgTemperature: reading.temperature,
+    avgActivity: reading.movement,
+    timestamp: reading.recorded_at,
+  }));
+
+  return {
+    data: {
+      totalAnimals: summary.total_animals ?? 0,
+      monitoredAnimals: summary.active_animals ?? 0,
+      normalBehavior: raw.behavior_distribution?.NORMAL ?? 0,
+      abnormalAlerts: summary.open_alerts ?? 0,
+
+      devicesOnline: summary.online_devices ?? 0,
+      devicesOffline: summary.offline_devices ?? 0,
+      devicesWarning: summary.maintenance_devices ?? 0,
+      totalDevices: summary.total_devices ?? 0,
+
+      behaviorDistribution,
+      // The backend does not yet provide time-series trends.
+      sensorTrends: [],
+      recentAlerts,
+      recentReadings,
+    },
+  };
+};
+
 export const getDashboardSummary = async (filters = {}) => {
   if (useMockData()) {
-    // Return mock data for demo mode
     const allReadings = [];
-    Object.entries(mockSensorReadings).forEach(([anmId, list]) => {
-      const animal = mockAnimals.find((a) => a.id === anmId);
-      list.forEach((r) => {
+
+    Object.entries(mockSensorReadings).forEach(([animalId, list]) => {
+      const animal = mockAnimals.find(
+        (item) => String(item.id) === String(animalId)
+      );
+
+      list.forEach((reading) => {
         allReadings.push({
-          ...r,
-          animalName: animal?.name || anmId,
+          ...reading,
+          animalName: animal?.name || animalId,
           species: animal?.species || '—',
         });
       });
@@ -59,12 +98,17 @@ export const getDashboardSummary = async (filters = {}) => {
         behaviorDistribution: mockBehaviorDistribution,
         sensorTrends: mockSensorTrends,
         recentAlerts: mockAlerts.slice(0, 5),
-        recentReadings: allReadings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+        recentReadings: allReadings.sort(
+          (a, b) =>
+            new Date(b.timestamp) - new Date(a.timestamp)
+        ),
       },
     };
   }
 
-  // Real API call in API mode
-  const response = await api.get('/dashboard/summary', { params: filters });
-  return response;
+  const response = await api.get('/dashboard/summary', {
+    params: filters,
+  });
+
+  return normalizeDashboardResponse(response);
 };

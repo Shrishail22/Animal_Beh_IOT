@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 frontend/node_modules/
 
@@ -7,6 +7,17 @@ dist/
 frontend/dist/
 dist-ssr/
 frontend/dist-ssr/
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+backend/.venv/
+env/
+venv/
+ENV/
 
 # Environment variables
 .env.local

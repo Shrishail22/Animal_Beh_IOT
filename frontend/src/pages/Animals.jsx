@@ -156,6 +156,7 @@ export default function Animals() {
             <option value="monitored">Monitored</option>
             <option value="normal">Normal</option>
             <option value="alert">Alert</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
         <button

@@ -1,11 +1,6 @@
 // =============================================================================
 // Report Service — API layer for reports and analytics
 // =============================================================================
-// Provisional endpoints (confirm with backend developer):
-//   GET /reports/summary?period=daily|weekly|monthly  — summary stats
-//   GET /reports/trends?period=weekly                 — trend data
-//   GET /reports/export?format=csv&from=ISO&to=ISO    — CSV download
-// =============================================================================
 
 import api, { useMockData } from './api';
 import {
