@@ -31,3 +31,7 @@ frontend/.env.*.local
 .DS_Store
 Thumbs.db
 *.log
+
+# Local environment secrets
+backend/.env
+*.sqlite-journal
