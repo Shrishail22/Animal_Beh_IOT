@@ -14,12 +14,13 @@ router = APIRouter(prefix="/api/devices", tags=["Devices"])
 
 class DeviceCreate(BaseModel):
     device_code: str = Field(min_length=1, max_length=50)
-    animal_id: int = Field(gt=0)
+    animal_id: int | None = Field(default=None, gt=0)
     device_type: str = Field(default="ESP32", min_length=1, max_length=100)
     firmware_version: str | None = Field(default=None, max_length=50)
-    battery_level: Decimal | None = Field(
-        default=None, ge=0, le=100, max_digits=5, decimal_places=2
+    battery_level: Decimal | float | None = Field(
+        default=None, ge=0, le=100
     )
+    status: Literal["ONLINE", "OFFLINE", "MAINTENANCE"] = "OFFLINE" 
 
 
 class DeviceUpdate(BaseModel):
@@ -109,18 +110,22 @@ def create_device(device: DeviceCreate):
             detail="Device code and device type cannot be blank",
         )
 
+    if data.get("battery_level") is not None:
+        data["battery_level"] = float(data["battery_level"])
+
     try:
         with engine.begin() as conn:
-            animal = conn.execute(
-                text("SELECT id FROM animals WHERE id = :id"),
-                {"id": data["animal_id"]},
-            ).first()
+            if data.get("animal_id") is not None:
+                animal = conn.execute(
+                    text("SELECT id FROM animals WHERE id = :id"),
+                    {"id": data["animal_id"]},
+                ).first()
 
-            if animal is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Animal not found",
-                )
+                if animal is None:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="Animal not found",
+                    )
 
             result = conn.execute(
                 text("""
@@ -130,7 +135,7 @@ def create_device(device: DeviceCreate):
                     )
                     VALUES (
                         :device_code, :animal_id, :device_type,
-                        :firmware_version, :battery_level, 'OFFLINE'
+                        :firmware_version, :battery_level, :status
                     )
                 """),
                 data,
@@ -318,3 +323,25 @@ def unassign_device(device_id: int):
             status_code=500,
             detail="Unable to unassign device",
         )
+
+
+@router.delete("/{device_id}")
+def delete_device(device_id: int):
+    try:
+        with engine.begin() as conn:
+            existing = conn.execute(
+                text("SELECT id FROM devices WHERE id = :id"),
+                {"id": device_id}
+            ).first()
+
+            if existing is None:
+                raise HTTPException(status_code=404, detail="Device not found")
+
+            conn.execute(
+                text("DELETE FROM devices WHERE id = :id"),
+                {"id": device_id}
+            )
+
+        return {"message": "Device deleted successfully", "device_id": device_id}
+    except SQLAlchemyError:
+        raise HTTPException(status_code=500, detail="Unable to delete device")

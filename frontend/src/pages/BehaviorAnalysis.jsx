@@ -65,7 +65,7 @@ export default function BehaviorAnalysis() {
     loadData();
   }, [selectedAnimalId]);
 
-  const selectedAnimal = animals.find((a) => a.id === selectedAnimalId);
+  const selectedAnimal = animals.find((a) => String(a.id) === String(selectedAnimalId));
 
   // Filter predictions by behavior and date window
   const filteredPredictions = useMemo(() => {

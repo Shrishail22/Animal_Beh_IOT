@@ -1,6 +1,13 @@
 import os
+import sqlite3
+from decimal import Decimal
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
+
+# Register adapters so SQLite natively supports binding Decimal and date/datetime objects
+sqlite3.register_adapter(Decimal, float)
+sqlite3.register_adapter(date, lambda d: d.isoformat())
+sqlite3.register_adapter(datetime, lambda dt: dt.isoformat())
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text

@@ -190,6 +190,11 @@ def create_animal(animal: AnimalCreate):
             detail="Animal code, name, and species cannot be blank"
         )
 
+    if values.get("date_of_birth") and hasattr(values["date_of_birth"], "isoformat"):
+        values["date_of_birth"] = values["date_of_birth"].isoformat()
+    if values.get("weight_kg") is not None:
+        values["weight_kg"] = float(values["weight_kg"])
+
     try:
         with engine.begin() as connection:
             result = connection.execute(query, values)
@@ -262,6 +267,11 @@ def update_animal(animal_id: int, animal: AnimalUpdate):
         "animal_code", "name", "species", "breed", "gender",
         "date_of_birth", "weight_kg", "owner_name", "status"
     }
+
+    if "date_of_birth" in updates and updates["date_of_birth"] and hasattr(updates["date_of_birth"], "isoformat"):
+        updates["date_of_birth"] = updates["date_of_birth"].isoformat()
+    if "weight_kg" in updates and updates["weight_kg"] is not None:
+        updates["weight_kg"] = float(updates["weight_kg"])
 
     try:
         with engine.begin() as connection:
@@ -371,3 +381,26 @@ def deactivate_animal(animal_id: int):
             status_code=500,
             detail="Unable to deactivate animal"
         )
+
+
+
+@router.delete("/{animal_id}")
+def delete_animal(animal_id: int):
+    try:
+        with engine.begin() as conn:
+            existing = conn.execute(
+                text("SELECT id FROM animals WHERE id = :id"),
+                {"id": animal_id}
+            ).first()
+
+            if existing is None:
+                raise HTTPException(status_code=404, detail="Animal not found")
+
+            conn.execute(
+                text("DELETE FROM animals WHERE id = :id"),
+                {"id": animal_id}
+            )
+
+        return {"message": "Animal deleted successfully", "animal_id": animal_id}
+    except SQLAlchemyError:
+        raise HTTPException(status_code=500, detail="Unable to delete animal")

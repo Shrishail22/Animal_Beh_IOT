@@ -5,12 +5,23 @@
 import api, { useMockData } from './api';
 import { mockPredictions } from '../mock/mockData';
 
+const normalizeBehavior = (raw) => {
+  if (!raw) return 'Active';
+  const str = String(raw).toUpperCase().trim();
+  if (str === 'REST' || str === 'RESTING' || str === 'LOW_ACTIVITY') return 'Resting';
+  if (str === 'NORMAL' || str === 'ACTIVE' || str === 'HIGH_ACTIVITY') return 'Active';
+  if (str === 'FEEDING' || str === 'EATING' || str === 'GRAZING') return 'Feeding';
+  if (str === 'WALKING' || str === 'RUNNING') return 'Walking';
+  if (str === 'ABNORMAL' || str === 'CRITICAL' || str === 'ANOMALY') return 'Abnormal';
+  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+};
+
 export const toFrontendPrediction = (p) => ({
   ...p,
   id: p.id,
   animalId: p.animal_id ?? p.animalId,
   readingId: p.reading_id ?? p.readingId,
-  predictedBehavior: p.predicted_behavior ?? p.predictedBehavior ?? 'NORMAL',
+  predictedBehavior: normalizeBehavior(p.predicted_behavior ?? p.predictedBehavior),
   confidence: Number(p.confidence) || 0.85,
   riskLevel: p.risk_level ?? p.riskLevel ?? 'LOW',
   modelVersion: p.model_version ?? p.modelVersion ?? 'RULE_BASELINE_v1',

@@ -159,6 +159,17 @@ export const unassignDevice = async (deviceId) => {
   };
 };
 
+export const deleteDevice = async (id) => {
+  if (useMockData()) {
+    demoDevices = demoDevices.filter(
+      (d) => String(d.id) !== String(id) && String(d.deviceCode) !== String(id)
+    );
+    return { data: { success: true } };
+  }
+  const numericId = typeof id === 'string' && id.startsWith('DEV-') ? parseInt(id.replace('DEV-', ''), 10) : id;
+  return api.delete(`/devices/${numericId}`);
+};
+
 export const resetDemoDevices = () => {
   demoDevices = [...mockDevices];
 };

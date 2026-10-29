@@ -100,7 +100,7 @@ export default function Devices() {
       toast.error('Select an animal to assign');
       return;
     }
-    const animal = animals.find((a) => a.id === selectedAnimalForAssign);
+    const animal = animals.find((a) => String(a.id) === String(selectedAnimalForAssign));
     try {
       await assignDevice(deviceToAssign.id, animal.id, animal.name);
       toast.success(`Assigned ${deviceToAssign.name} to ${animal.name}`);
@@ -127,11 +127,17 @@ export default function Devices() {
   };
 
   // Delete device
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!confirmDelete) return;
-    setDevices((prev) => prev.filter((d) => d.id !== confirmDelete.id));
-    toast.success(`Device ${confirmDelete.id} decommissioned.`);
-    setConfirmDelete(null);
+    try {
+      await deleteDevice(confirmDelete.id);
+      setDevices((prev) => prev.filter((d) => d.id !== confirmDelete.id));
+      toast.success(`Device ${confirmDelete.id} decommissioned.`);
+      setConfirmDelete(null);
+      fetchDeviceList();
+    } catch (err) {
+      toast.error(err.message || 'Failed to decommission device');
+    }
   };
 
   // DataTable columns with sorting and actions

@@ -81,8 +81,8 @@ export default function LiveMonitoring() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const animal = animals.find((a) => a.id === selectedAnimal);
-  const device = devices.find((d) => d.id === animal?.deviceId);
+  const animal = animals.find((a) => String(a.id) === String(selectedAnimal));
+  const device = devices.find((d) => String(d.id) === String(animal?.deviceId) || String(d.assignedAnimalId) === String(animal?.id));
 
   // Filter readings by selected timeframe
   const filteredReadings = useMemo(() => {
